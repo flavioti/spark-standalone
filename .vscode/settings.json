@@ -14,5 +14,6 @@
     "github.copilot.enable": {
         "*": false
     },
-    "geminicodeassist.enableCodeCompletion": false
+    "geminicodeassist.enableCodeCompletion": false,
+    "python.terminal.useEnvFile": true
 }
