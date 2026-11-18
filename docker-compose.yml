@@ -1,6 +1,6 @@
 name: spark_learning
 
-# Spark standalone cluster (1 master + 1 worker), a History Server for
+# Spark standalone cluster (1 master + 3 worker), a History Server for
 # finished jobs, and a Jupyter notebook with PySpark pointed at the cluster.
 # Versions are pinned together so the driver (notebook) and the cluster run
 # the same Spark release.
@@ -13,8 +13,10 @@ name: spark_learning
 #   ./notebooks     your notebooks
 #
 # Host ports:
-#   8081   Spark master UI      (8080 is taken by kafka-ui)
-#   (worker UIs are not published: scale workers and see them in the master UI at 8081)
+#   8081   Spark master UI
+#   8082   Spark Worker
+#   8083   Spark Worker
+#   8084   Spark Worker
 #   18080  Spark History Server (finished applications)
 #   4040   Spark application UI (while a notebook session is active)
 #   8888   Jupyter Lab
@@ -64,7 +66,8 @@ services:
     environment:
       - SPARK_NO_DAEMONIZE=true
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_DAEMON_MEMORY=1g
     volumes: *spark-volumes
     depends_on:
       spark-master:
@@ -72,28 +75,30 @@ services:
     deploy:
       resources:
         limits:
-          memory: 3g
+          memory: 2g
       replicas: 3
-
-  history-server:
-    image: *spark-image
-    command:
-      - /opt/spark/bin/spark-class
-      - org.apache.spark.deploy.history.HistoryServer
     ports:
-      - "18080:18080"
-    # Event logs written by the notebook are owned by the host user with group "users" (mode 770),
-    # so the History Server needs the "users" group (gid 100) to read them.
-    group_add:
-      - "100"
-    environment:
-      - SPARK_NO_DAEMONIZE=true
-      - SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=/spark-events
-    volumes: *spark-volumes
-    depends_on:
-      spark-master:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 1g
+      - "8082-8084:8081"
+
+  # history-server:
+  #   image: *spark-image
+  #   command:
+  #     - /opt/spark/bin/spark-class
+  #     - org.apache.spark.deploy.history.HistoryServer
+  #   ports:
+  #     - "18080:18080"
+  #   # Event logs written by the notebook are owned by the host user with group "users" (mode 770),
+  #   # so the History Server needs the "users" group (gid 100) to read them.
+  #   group_add:
+  #     - "100"
+  #   environment:
+  #     - SPARK_NO_DAEMONIZE=true
+  #     - SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=/spark-events
+  #   volumes: *spark-volumes
+  #   depends_on:
+  #     spark-master:
+  #       condition: service_healthy
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 512m

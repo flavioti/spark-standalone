@@ -2,3 +2,5 @@
 spark-events/
 .ipynb_checkpoints/
 .env
+data/
+

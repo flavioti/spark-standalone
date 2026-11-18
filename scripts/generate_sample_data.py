@@ -11,6 +11,7 @@ import csv
 import json
 import random
 from datetime import date, datetime, timedelta
+from itertools import accumulate
 from pathlib import Path
 
 SEED = 42
@@ -66,6 +67,9 @@ def generate_orders(rng, n_orders, n_customers, n_products):
     # Customer activity is skewed (a few customers order a lot), which makes
     # groupBy/join exercises show realistic data skew.
     weights = [1.0 / (i ** 0.8) for i in range(1, n_customers + 1)]
+    # Precompute cumulative weights once; passing weights= on every call would
+    # rebuild them for each order (O(orders * customers)).
+    cum_weights = list(accumulate(weights))
     customer_ids = list(range(1, n_customers + 1))
     start = datetime(2023, 1, 1)
     rows = []
@@ -73,7 +77,7 @@ def generate_orders(rng, n_orders, n_customers, n_products):
         ts = start + timedelta(seconds=rng.randint(0, 2 * 365 * 24 * 3600))
         rows.append([
             oid,
-            rng.choices(customer_ids, weights=weights)[0],
+            rng.choices(customer_ids, cum_weights=cum_weights)[0],
             rng.randint(1, n_products),
             rng.randint(1, 5),
             ts.isoformat(timespec="seconds"),
